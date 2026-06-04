@@ -1,0 +1,8 @@
+﻿venv/
+dataset/
+__pycache__/
+*.h5
+*.pyc
+outputs/predictions/
+outputs/tensorboard_logs/
+*.zip
