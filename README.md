@@ -8,7 +8,7 @@
 [![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-ff6f00?style=flat-square&logo=tensorflow&logoColor=white)](https://tensorflow.org)
 [![Dataset](https://img.shields.io/badge/Dataset-DRIVE-16a34a?style=flat-square)](https://drive.grand-challenge.org/)
 [![Task](https://img.shields.io/badge/Task-Medical%20Segmentation-dc2626?style=flat-square)](#)
-[![Dice](https://img.shields.io/badge/Dice%20Score-0.8134-7c3aed?style=flat-square)](#results)
+[![Dice](https://img.shields.io/badge/Dice%20Score-0.7941-7c3aed?style=flat-square)](#results)
 
 > An end-to-end deep learning pipeline that automatically maps every blood vessel in a retinal fundus photograph — pixel by pixel — matching the accuracy of trained ophthalmologists.
 
@@ -100,10 +100,10 @@ OUTPUT MASK (512×512×1)  — each pixel = probability of being a vessel
 
 | Metric | Our Model | DRIVE Human Expert |
 |---|---|---|
-| **Dice Coefficient** | **0.8134** | ~0.8000 |
-| **IoU Score** | **0.6871** | ~0.6700 |
-| Recall (Sensitivity) | 0.7923 | — |
-| Precision | 0.8367 | — |
+| **Dice Coefficient** | **0.7941** | ~0.8000 |
+| **IoU Score** | **0.6588** | ~0.6700 |
+| Recall (Sensitivity) | 0.7851 | — |
+| Precision | 0.7947 | — |
 
 > Model trained for 100 epochs, batch size 2, learning rate 1e-4, DRIVE dataset (20 train / 20 test images).
 
