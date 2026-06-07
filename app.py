@@ -7,6 +7,8 @@ import os
 import sys
 import time
 import io
+import base64
+import streamlit.components.v1 as components
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -753,6 +755,311 @@ def create_comparison_image(original, overlay, split_percent):
     comparison[:, max(split_x - 2, 0):min(split_x + 2, comparison.shape[1])] = [255, 255, 255]
     return comparison
 
+def image_array_to_data_uri(image_array):
+    image_uint8 = np.clip(image_array * 255, 0, 255).astype(np.uint8)
+    image_pil = Image.fromarray(image_uint8)
+    buffer = io.BytesIO()
+    image_pil.save(buffer, format="PNG")
+    encoded = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    return f"data:image/png;base64,{encoded}"
+
+def render_comparison_slider(original, overlay):
+    original_uri = image_array_to_data_uri(original)
+    overlay_uri = image_array_to_data_uri(overlay)
+
+    components.html(
+        f"""
+        <div class="rv-comparison-shell">
+            <div class="rv-comparison-header">
+                <div>
+                    <div class="rv-kicker">Interactive Review</div>
+                    <div class="rv-title">Original Fundus Image vs Vessel Overlay</div>
+                </div>
+                <div class="rv-help">Drag the divider</div>
+            </div>
+
+            <div class="rv-compare" id="rvCompare">
+                <img class="rv-img rv-original" src="{original_uri}" alt="Original fundus image">
+                <img class="rv-img rv-overlay" id="rvOverlay" src="{overlay_uri}" alt="Vessel overlay image">
+
+                <div class="rv-label rv-label-left">Original Fundus</div>
+                <div class="rv-label rv-label-right">Vessel Overlay</div>
+
+                <div class="rv-divider" id="rvDivider" role="slider" tabindex="0"
+                     aria-label="Comparison divider" aria-valuemin="0" aria-valuemax="100"
+                     aria-valuenow="50">
+                    <div class="rv-handle">
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            :root {{
+                --split: 50%;
+                --rv-blue: #0b5ed7;
+                --rv-blue-dark: #073b7a;
+                --rv-teal: #11b7a4;
+                --rv-border: #dbeafe;
+                --rv-muted: #64748b;
+                --rv-text: #17324d;
+            }}
+
+            * {{
+                box-sizing: border-box;
+            }}
+
+            body {{
+                margin: 0;
+                font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                background: transparent;
+            }}
+
+            .rv-comparison-shell {{
+                width: 100%;
+                padding: 1rem;
+                border: 1px solid var(--rv-border);
+                border-radius: 26px;
+                background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(244,251,255,0.98));
+                box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+            }}
+
+            .rv-comparison-header {{
+                display: flex;
+                justify-content: space-between;
+                gap: 1rem;
+                align-items: center;
+                margin-bottom: 0.85rem;
+            }}
+
+            .rv-kicker {{
+                color: var(--rv-teal);
+                font-size: 0.76rem;
+                font-weight: 850;
+                letter-spacing: 0.09em;
+                text-transform: uppercase;
+                margin-bottom: 0.2rem;
+            }}
+
+            .rv-title {{
+                color: var(--rv-text);
+                font-size: clamp(1rem, 2.3vw, 1.35rem);
+                font-weight: 850;
+                letter-spacing: -0.03em;
+            }}
+
+            .rv-help {{
+                color: var(--rv-blue-dark);
+                background: #e8fbf8;
+                border: 1px solid rgba(17, 183, 164, 0.28);
+                border-radius: 999px;
+                padding: 0.45rem 0.75rem;
+                font-size: 0.8rem;
+                font-weight: 800;
+                white-space: nowrap;
+            }}
+
+            .rv-compare {{
+                position: relative;
+                width: 100%;
+                aspect-ratio: 1 / 1;
+                overflow: hidden;
+                border-radius: 22px;
+                border: 1px solid rgba(11, 94, 215, 0.18);
+                background: #071f3a;
+                user-select: none;
+                cursor: ew-resize;
+                touch-action: none;
+            }}
+
+            .rv-img {{
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                pointer-events: none;
+            }}
+
+            .rv-original {{
+                z-index: 1;
+            }}
+
+            .rv-overlay {{
+                z-index: 2;
+                clip-path: inset(0 0 0 var(--split));
+                will-change: clip-path;
+            }}
+
+            .rv-divider {{
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: var(--split);
+                z-index: 5;
+                width: 0;
+                outline: none;
+                will-change: left;
+            }}
+
+            .rv-divider::before {{
+                content: "";
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: -1.5px;
+                width: 3px;
+                background: linear-gradient(180deg, #ffffff, #dffcff, #ffffff);
+                box-shadow: 0 0 0 1px rgba(11, 94, 215, 0.22), 0 0 18px rgba(17, 183, 164, 0.65);
+            }}
+
+            .rv-handle {{
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 54px;
+                height: 54px;
+                transform: translate(-50%, -50%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 5px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, var(--rv-blue), var(--rv-teal));
+                border: 3px solid #ffffff;
+                box-shadow: 0 12px 30px rgba(7, 59, 122, 0.28);
+            }}
+
+            .rv-handle span {{
+                width: 8px;
+                height: 8px;
+                border-left: 2px solid #ffffff;
+                border-bottom: 2px solid #ffffff;
+            }}
+
+            .rv-handle span:first-child {{
+                transform: rotate(45deg);
+            }}
+
+            .rv-handle span:last-child {{
+                transform: rotate(225deg);
+            }}
+
+            .rv-label {{
+                position: absolute;
+                top: 0.85rem;
+                z-index: 6;
+                padding: 0.42rem 0.72rem;
+                border-radius: 999px;
+                color: #ffffff;
+                font-size: 0.76rem;
+                font-weight: 850;
+                letter-spacing: 0.02em;
+                background: rgba(7, 59, 122, 0.72);
+                border: 1px solid rgba(255, 255, 255, 0.22);
+                backdrop-filter: blur(10px);
+            }}
+
+            .rv-label-left {{
+                left: 0.85rem;
+            }}
+
+            .rv-label-right {{
+                right: 0.85rem;
+                background: rgba(17, 183, 164, 0.78);
+            }}
+
+            @media (max-width: 680px) {{
+                .rv-comparison-shell {{
+                    padding: 0.75rem;
+                    border-radius: 20px;
+                }}
+
+                .rv-comparison-header {{
+                    align-items: flex-start;
+                    flex-direction: column;
+                    gap: 0.45rem;
+                }}
+
+                .rv-label {{
+                    top: 0.55rem;
+                    font-size: 0.68rem;
+                    padding: 0.35rem 0.55rem;
+                }}
+
+                .rv-label-left {{
+                    left: 0.55rem;
+                }}
+
+                .rv-label-right {{
+                    right: 0.55rem;
+                }}
+
+                .rv-handle {{
+                    width: 46px;
+                    height: 46px;
+                }}
+            }}
+        </style>
+
+        <script>
+            const compare = document.getElementById("rvCompare");
+            const divider = document.getElementById("rvDivider");
+
+            function clamp(value, min, max) {{
+                return Math.min(Math.max(value, min), max);
+            }}
+
+            function setSplit(percent) {{
+                const safePercent = clamp(percent, 0, 100);
+                compare.style.setProperty("--split", safePercent + "%");
+                divider.setAttribute("aria-valuenow", Math.round(safePercent));
+            }}
+
+            function updateFromClientX(clientX) {{
+                const rect = compare.getBoundingClientRect();
+                const percent = ((clientX - rect.left) / rect.width) * 100;
+                setSplit(percent);
+            }}
+
+            compare.addEventListener("pointerdown", (event) => {{
+                compare.setPointerCapture(event.pointerId);
+                updateFromClientX(event.clientX);
+            }});
+
+            compare.addEventListener("pointermove", (event) => {{
+                if (event.buttons === 1 || event.pressure > 0) {{
+                    updateFromClientX(event.clientX);
+                }}
+            }});
+
+            divider.addEventListener("keydown", (event) => {{
+                const current = Number(divider.getAttribute("aria-valuenow")) || 50;
+                if (event.key === "ArrowLeft") {{
+                    setSplit(current - 2);
+                    event.preventDefault();
+                }}
+                if (event.key === "ArrowRight") {{
+                    setSplit(current + 2);
+                    event.preventDefault();
+                }}
+                if (event.key === "Home") {{
+                    setSplit(0);
+                    event.preventDefault();
+                }}
+                if (event.key === "End") {{
+                    setSplit(100);
+                    event.preventDefault();
+                }}
+            }});
+        </script>
+        """,
+        height=650,
+        scrolling=False
+    )
+
 st.markdown("""
 <div class="hero">
     <div class="hero-eyebrow">Clinical AI Research Dashboard</div>
@@ -963,6 +1270,8 @@ if uploaded_file is not None:
             analytics = calculate_vessel_analytics(binary_mask, prob_mask)
         loading_slot.empty()
 
+        render_comparison_slider(processed, overlay)
+
         section_heading("Segmentation Results", "AI Vessel Analysis", "results")
         
         col1, col2, col3 = st.columns(3)
@@ -982,32 +1291,18 @@ if uploaded_file is not None:
             st.image(overlay, use_container_width=True, clamp=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
-        compare_col, confidence_col = st.columns([1.45, 0.55])
-        with compare_col:
-            st.markdown('<div class="panel"><p class="image-caption">Before / After Comparison</p>', unsafe_allow_html=True)
-            split_percent = st.slider(
-                "Move slider to compare original fundus image with vessel overlay",
-                min_value=0,
-                max_value=100,
-                value=50,
-                step=1
-            )
-            comparison = create_comparison_image(processed, overlay, split_percent)
-            st.image(comparison, use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-        with confidence_col:
-            st.markdown(
-                f"""
-                <div class="confidence-card">
-                    <div class="performance-label" style="color: rgba(255,255,255,0.74);">Prediction Confidence</div>
-                    <div class="confidence-value">{analytics["confidence"]:.1f}%</div>
-                    <p class="confidence-copy">
-                        Mean pixel-level certainty derived from the vessel probability map.
-                    </p>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+        st.markdown(
+            f"""
+            <div class="confidence-card">
+                <div class="performance-label" style="color: rgba(255,255,255,0.74);">Prediction Confidence</div>
+                <div class="confidence-value">{analytics["confidence"]:.1f}%</div>
+                <p class="confidence-copy">
+                    Mean pixel-level certainty derived from the vessel probability map.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
         
         section_heading("Advanced Vessel Analytics", "Retinal Vessel Measurements")
         
